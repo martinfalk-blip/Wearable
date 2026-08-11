@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d10">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Wearable Fusion">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Wearable Fusion</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;color:#f4f5f7;background:#0b0d10}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#11151b,#090b0e);min-height:100vh}
+main{max-width:700px;margin:auto;padding:calc(18px + env(safe-area-inset-top)) 16px calc(90px + env(safe-area-inset-bottom))}
+h1{font-size:32px;margin:5px 0 2px}.sub{color:#9ba2ad;margin-bottom:18px}
+nav{position:fixed;z-index:3;bottom:0;left:0;right:0;padding:10px 10px calc(10px + env(safe-area-inset-bottom));background:#12151add;backdrop-filter:blur(20px);display:flex;justify-content:space-around}
+nav button{background:none;border:0;color:#9da5b0;font-size:12px}nav button.active{color:#fff}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.card{background:#171b21;border:1px solid #252a32;border-radius:18px;padding:16px;margin-bottom:12px}.wide{grid-column:1/-1}
+.label{font-size:12px;color:#9ba2ad}.value{font-size:26px;font-weight:750;margin-top:5px}.small{font-size:12px;color:#9ba2ad;margin-top:4px}
+.score{font-size:52px;font-weight:800}.bar{height:8px;background:#2a3038;border-radius:9px;overflow:hidden;margin-top:12px}.fill{height:100%;background:#6ee7b7;border-radius:9px}
+.row{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #292e35}.row:last-child{border:0}
+.activity{padding:14px 0;border-bottom:1px solid #292e35}.activity:last-child{border:0}.title{font-weight:700}.muted{color:#9ba2ad}.pill{display:inline-block;padding:4px 8px;border-radius:10px;background:#252b33;font-size:11px;margin-top:6px}
+button.action{width:100%;padding:13px;border:0;border-radius:14px;background:#f4f5f7;color:#0b0d10;font-weight:700}
+canvas{width:100%;height:180px;background:#11151a;border-radius:14px;margin-top:10px}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<nav>
+<button data-tab="today" class="active">⌂<br>Heute</button>
+<button data-tab="sport">🏃<br>Sport</button>
+<button data-tab="compare">↔<br>Vergleich</button>
+<button data-tab="trends">⌁<br>Trends</button>
+</nav>
+<script>
+const days=[...Array(14)].map((_,i)=>({
+d:i,whoopHRV:48+(i*7)%13,garminHRV:39+(i*5)%10,rhrW:49+i%3,rhrG:51+(i+1)%3,
+rec:72+(i*3)%20,bb:68+(i*4)%25,sleepW:7.2+(i%4)*.2,sleepG:7+(i%3)*.25,
+stepsW:7600+i*130,stepsG:9300+i*110}));
+const acts=[
+{sport:"Laufen",date:"Heute",dur:"46 min",dist:"8,2 km",pace:"5:37/km",avg:151,max:176,kcal:590,elev:62,te:"3,2",load:118},
+{sport:"Krafttraining",date:"Gestern",dur:"54 min",dist:"—",pace:"—",avg:119,max:158,kcal:360,elev:"—",te:"2,4",load:74},
+{sport:"Radfahren",date:"Vor 3 Tagen",dur:"82 min",dist:"31,4 km",pace:"—",avg:143,max:171,kcal:710,elev:280,te:"3,6",load:156}];
+const app=document.getElementById("app");
+function card(label,value,small=""){return `<div class="card"><div class="label">${label}</div><div class="value">${value}</div><div class="small">${small}</div></div>`}
+function today(){
+ const x=days[0], score=Math.round(x.rec*.55+x.bb*.35+10);
+ app.innerHTML=`<h1>Wearable Fusion</h1><div class="sub">WHOOP 5.0 + Garmin Crossover Tactical</div>
+ <div class="card"><div class="label">Kombinierte Erholung</div><div class="score">${score}/100</div><div class="small">WHOOP Recovery ${x.rec}% · Garmin Body Battery ${x.bb}</div><div class="bar"><div class="fill" style="width:${score}%"></div></div></div>
+ <div class="grid">${card("HRV · WHOOP",x.whoopHRV+" ms","Schlaf")}${card("HRV · Garmin",x.garminHRV+" ms","Schlaf")}
+ ${card("Ruhepuls · WHOOP",x.rhrW+" bpm")}${card("Ruhepuls · Garmin",x.rhrG+" bpm")}
+ ${card("Schlaf · WHOOP",fmtH(x.sleepW))}${card("Schlaf · Garmin",fmtH(x.sleepG))}
+ ${card("Schritte · Garmin",x.stepsG.toLocaleString("de-DE"),"WHOOP: "+x.stepsW.toLocaleString("de-DE"))}</div>
+ <div class="card"><div class="label">Letztes Training</div><h2>${acts[0].sport}</h2><div>${acts[0].dur} · ${acts[0].dist} · Ø ${acts[0].avg} bpm</div></div>`;
+}
+function sport(){
+ app.innerHTML=`<h1>Sport</h1><div class="sub">Garmin-Aktivitäten</div><div class="card">${acts.map(a=>`<div class="activity"><div class="title">${a.sport}</div><div class="muted">${a.date} · ${a.dur} · ${a.dist}</div><div class="pill">Ø HF ${a.avg} · max ${a.max} bpm</div><div class="small">Kalorien ${a.kcal} kcal · Load ${a.load} · Training Effect ${a.te}</div></div>`).join("")}</div>`;
+}
+function compare(){
+ const x=days[0];
+ app.innerHTML=`<h1>WHOOP ↔ Garmin</h1><div class="sub">Absolute Werte nicht vermischen – Trends vergleichen.</div><div class="card">
+ ${row("HRV",x.whoopHRV+" ms",x.garminHRV+" ms")}
+ ${row("Ruhepuls",x.rhrW+" bpm",x.rhrG+" bpm")}
+ ${row("Schlaf",fmtH(x.sleepW),fmtH(x.sleepG))}
+ ${row("Schritte",x.stepsW.toLocaleString("de-DE"),x.stepsG.toLocaleString("de-DE"))}</div>
+ <div class="card"><b>Referenzlogik</b><p class="small">Garmin: Schritte und detaillierte Sportaktivitäten. WHOOP: Recovery und Schlaf. HRV wird als Trend pro Gerät betrachtet.</p></div>`;
+}
+function trends(){
+ app.innerHTML=`<h1>Trends</h1><div class="sub">Letzte 14 Tage · Demo-Daten</div><div class="card"><b>HRV</b><canvas id="chart"></canvas></div><div class="grid">${card("Ø WHOOP HRV",avg("whoopHRV")+" ms")}${card("Ø Garmin HRV",avg("garminHRV")+" ms")}${card("Ø Schlaf",fmtH(avg("sleepW")))}${card("Ø Schritte",Math.round(avg("stepsG")).toLocaleString("de-DE"))}</div>`;
+ setTimeout(draw,0);
+}
+function row(n,a,b){return `<div class="row"><b>${n}</b><span>WHOOP ${a}<br><span class="muted">Garmin ${b}</span></span></div>`}
+function fmtH(h){let x=Math.floor(h),m=Math.round((h-x)*60);return `${x} h ${m} min`}
+function avg(k){return days.reduce((s,x)=>s+x[k],0)/days.length}
+function draw(){let c=document.getElementById("chart"),ctx=c.getContext("2d"),w=c.width=c.clientWidth*2,h=c.height=c.clientHeight*2;ctx.scale(2,2);w/=2;h/=2;let vals=days.slice().reverse(), max=65,min=35;ctx.strokeStyle="#6ee7b7";ctx.lineWidth=2;ctx.beginPath();vals.forEach((x,i)=>{let X=i*w/(vals.length-1),Y=h-(x.whoopHRV-min)/(max-min)*h*.8-10;i?ctx.lineTo(X,Y):ctx.moveTo(X,Y)});ctx.stroke();ctx.strokeStyle="#8b9cff";ctx.beginPath();vals.forEach((x,i)=>{let X=i*w/(vals.length-1),Y=h-(x.garminHRV-min)/(max-min)*h*.8-10;i?ctx.lineTo(X,Y):ctx.moveTo(X,Y)});ctx.stroke()}
+function fmtTab(t){({today,sport,compare,trends}[t])()}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active");fmtTab(b.dataset.tab)});
+today();
+</script>
+</body>
+</html>
